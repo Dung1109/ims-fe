@@ -1,58 +1,52 @@
-"use client";
+'use client';
 
-import { useContext, useEffect, useState } from "react";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { AuthContext } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import useAuthStore from '../../hooks/useAuthStore';
 
-interface UsernameResponseModel {
-  username: string;
-}
-
-function PostLoginPage() {
-  const [authenticated, setAuthenticated] = useLocalStorage(
-    "authenticated",
-    false
-  );
-  const [username, setUsername] = useLocalStorage("username", "");
-
-  const [loaded, setLoaded] = useState(false);
+export default function PostLoginPage() {
+  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
+  const setUsername = useAuthStore((state) => state.setUsername);
   const router = useRouter();
+  console.log('PostLoginPage');
+  
 
   useEffect(() => {
+    
     const loadUsername = async () => {
-      const response = await fetch("http://127.0.0.1:8080/user/username", {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          Origin: "http://127.0.0.1:3000",
-        },
-      })
-      .catch((error) => {
-        console.log(error);
-        setLoaded(false);
-        router.push("/login");
-      });
-      const json = (await response.json()) as UsernameResponseModel;
-      if (response.ok) {
-        const _username = json.username;
-        const _authenticated = _username !== null && _username.length > 0;
+        const response = await fetch('http://127.0.0.1:8080/user/username', {
+            method: 'GET',
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+                "Origin": "http://127.0.0.1:3000",
+            }
+        })
+        .then(response => {
+            return response
+        })
+        .catch(error => {
+            console.log(error)
+            router.push('/login')
+        })
+        
+        
+        const json = await response?.json();
+        if(response?.ok) {
+            const _username = json.username
+            const _authenticated = _username !== null && _username.length > 0
 
-        setUsername(_username);
-        setAuthenticated(_authenticated);
+            setUsername(_username)
+            setAuthenticated(_authenticated)
 
-        setLoaded(true);
-        router.push("/");
-      } else {
-        setLoaded(false);
-        router.push("/login");
-      }
-    };
-    loadUsername();
+            router.push('/')
+        } else {
+            router.push('/login')
+        }
+    }
+
+    loadUsername()
   }, []);
 
-  return <div></div>;
+  return <div>Loading...</div>;
 }
-
-export default PostLoginPage;
