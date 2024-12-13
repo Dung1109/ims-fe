@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Search, ChevronLeft, ChevronRight, Eye, Pencil } from "lucide-react";
 import {
     Table,
@@ -20,75 +20,77 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
-interface User {
+interface UserinfoResponseDTO {
     username: string;
     enabled: boolean;
     authority: string;
-    full_name: string;
+    fullName: string;
+    picture: string;
     email: string;
-    phone_number: string;
+    emailVerified: boolean;
+    gender: string;
+    birthdate: string;
+    phoneNumber: string;
+    phoneNumberVerified: boolean;
+    address: string;
     position: string;
     department: string;
+    note: string;
+    updatedAt: string;
+    createdAt: string;
 }
 
-async function getUsers(): Promise<User[]> {
-    const res = await fetch("http://localhost:3001/users");
+async function fetchUsers(page: number, size: number, search: string, role: string): Promise<{ content: UserinfoResponseDTO[], totalPages: number }> {
+    const res = await fetch(`http://127.0.0.1:8080/resource-server/users?pageNo=${page}&pageSize=${size}&filterBy=${search}&filterRole=${role}`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
     if (!res.ok) {
         throw new Error("Failed to fetch users");
     }
+
     return res.json();
 }
 
 export default function Page() {
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(0);
     const [itemsPerPage] = useState(10);
     const [searchQuery, setSearchQuery] = useState("");
-    const [selectedRole, setSelectedRole] = useState("all");
+    const [selectedRole, setSelectedRole] = useState("");
 
     const {
-        data: users,
+        data,
         isLoading,
         isError,
-    } = useQuery<User[]>({
-        queryKey: ["users"],
-        queryFn: getUsers,
+    } = useQuery({
+        queryKey: ['users', currentPage, searchQuery, selectedRole],
+        queryFn: () => fetchUsers(currentPage, itemsPerPage, searchQuery, selectedRole)
     });
 
-    // Filter users based on search and role
-    const filteredUsers =
-        users?.filter((user) => {
-            const matchesSearch =
-                user.full_name
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()) ||
-                user.email.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesRole =
-                selectedRole === "all" ? true : user.authority === selectedRole;
-            return matchesSearch && matchesRole;
-        }) || [];
-
-    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
+    const users = data?.content || [];
+    const totalPages = data?.totalPages || 0;
 
     const handlePreviousPage = () => {
-        setCurrentPage((prev) => Math.max(prev - 1, 1));
+        setCurrentPage((prev) => Math.max(prev - 1, 0));
     };
 
     const handleNextPage = () => {
-        setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+        setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1));
     };
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(e.target.value);
-        setCurrentPage(1); // Reset to first page when searching
+        setCurrentPage(0); // Reset to first page when searching
     };
 
     const handleRoleChange = (value: string) => {
         setSelectedRole(value);
-        setCurrentPage(1); // Reset to first page when changing role
+        setCurrentPage(0); // Reset to first page when changing role
     };
 
     return (
@@ -119,7 +121,7 @@ export default function Page() {
                                     <SelectValue placeholder="Role" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">
+                                    <SelectItem value="ALL">
                                         All Roles
                                     </SelectItem>
                                     <SelectItem value="ROLE_ADMIN">
@@ -155,17 +157,17 @@ export default function Page() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {currentUsers.map((user: User) => (
+                                    {users.map((user: UserinfoResponseDTO) => (
                                         <TableRow key={user.email}>
                                             <TableCell>
-                                                {user.full_name}
+                                                {user.fullName}
                                             </TableCell>
                                             <TableCell>
                                                 {user.username}
                                             </TableCell>
                                             <TableCell>{user.email}</TableCell>
                                             <TableCell>
-                                                {user.phone_number}
+                                                {user.phoneNumber}
                                             </TableCell>
                                             <TableCell>
                                                 {user.position}
@@ -188,18 +190,22 @@ export default function Page() {
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                    >
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                    >
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
+                                                    <Link href={`/user/${user.username}`}>
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                    </Link>
+                                                    <Link href={`/user/${user.username}/edit`}>
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                    </Link>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -210,16 +216,16 @@ export default function Page() {
 
                         <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
                             <div>
-                                {indexOfFirstItem + 1}-
-                                {Math.min(indexOfLastItem, users?.length || 0)}{" "}
-                                of {users?.length || 0} rows
+                                {currentPage * itemsPerPage + 1}-
+                                {Math.min((currentPage + 1) * itemsPerPage, data?.content?.length || 0)}{" "}
+                                of {data?.content?.length || 0} rows
                             </div>
                             <div className="flex gap-2">
                                 <Button
                                     variant="outline"
                                     size="icon"
                                     onClick={handlePreviousPage}
-                                    disabled={currentPage === 1}
+                                    disabled={currentPage === 0}
                                 >
                                     <ChevronLeft className="h-4 w-4" />
                                 </Button>
@@ -227,7 +233,7 @@ export default function Page() {
                                     variant="outline"
                                     size="icon"
                                     onClick={handleNextPage}
-                                    disabled={currentPage === totalPages}
+                                    disabled={currentPage === totalPages - 1}
                                 >
                                     <ChevronRight className="h-4 w-4" />
                                 </Button>
