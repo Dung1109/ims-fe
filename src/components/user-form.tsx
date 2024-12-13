@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { userSchema, type UserFormValues } from "@/lib/schema";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -70,13 +71,47 @@ async function addUser(formData: FormData) {
   }
 }
 
-interface UserFormProps {
-    initialData?: UserFormValues;
-    readOnly?: boolean;
+async function updateUser(username: string, formData: FormData) {
+    try {
+        const csrfToken = await fetch("http://127.0.0.1:8080/csrf", {
+            method: "GET",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        }).then((res) => res.json()).then((data) => data.token);
+
+        const response = await fetch(
+            `http://127.0.0.1:8080/resource-server/users/${username}`,
+            {
+                method: "PUT",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-XSRF-Token": csrfToken,
+                },
+                body: JSON.stringify(Object.fromEntries(formData)),
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to update user");
+        }
+
+        return { success: true, message: "User updated successfully" };
+    } catch (error) {
+        return { success: false, message: "Failed to update user" };
+    }
 }
 
-export function UserForm({ initialData, readOnly = false }: UserFormProps) {
+interface UserFormProps {
+    initialData?: UserFormValues
+    isEditing?: boolean;
+}
+
+export function UserForm({ initialData, isEditing = false }: UserFormProps) {
     const { toast } = useToast();
+    const router = useRouter();
 
     const form = useForm<UserFormValues>({
         resolver: zodResolver(userSchema),
@@ -117,13 +152,20 @@ export function UserForm({ initialData, readOnly = false }: UserFormProps) {
             }
         });
 
-        const result = await addUser(formData);
+        const result = isEditing 
+            ? await updateUser(initialData!.username, formData)
+            : await addUser(formData);
+
         if (result.success) {
             toast({
                 title: "Success",
                 description: result.message,
             });
-            form.reset();
+            if (isEditing) {
+                router.push(`/user/${initialData!.username}`);
+            } else {
+                form.reset();
+            }
         } else {
             toast({
                 variant: "destructive",
@@ -133,12 +175,16 @@ export function UserForm({ initialData, readOnly = false }: UserFormProps) {
         }
     };
 
+    const handleCancel = () => {
+        router.push('/user');
+    };
+
     return (
-        <div className="mx-auto max-w-4xl p-6">
+        <div className="mx-auto max-w-4xl">
             <div className="mb-6 flex items-center gap-2">
                 <h1 className="text-xl font-semibold">User Details</h1>
                 <span className="text-muted-foreground">
-                    {readOnly ? "View user" : "Edit user"}
+                    {isEditing ? "Edit user" : "Add new user"}
                 </span>
             </div>
             <Form {...form}>
@@ -156,7 +202,6 @@ export function UserForm({ initialData, readOnly = false }: UserFormProps) {
                                         <Input 
                                             placeholder="Type a name..." 
                                             {...field} 
-                                            disabled={readOnly}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -172,7 +217,10 @@ export function UserForm({ initialData, readOnly = false }: UserFormProps) {
                                         Email <span className="text-red-500">*</span>
                                     </FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Type an email..." {...field} disabled={readOnly} />
+                                        <Input 
+                                            placeholder="Type an email..." 
+                                            {...field} 
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -222,7 +270,7 @@ export function UserForm({ initialData, readOnly = false }: UserFormProps) {
                                 <FormItem>
                                     <FormLabel>Phone number</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Type a number..." {...field} disabled={readOnly} />
+                                        <Input placeholder="Type a number..." {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -239,7 +287,6 @@ export function UserForm({ initialData, readOnly = false }: UserFormProps) {
                                     <Select
                                         onValueChange={field.onChange}
                                         value={field.value}
-                                        disabled={readOnly}
                                     >
                                         <FormControl>
                                             <SelectTrigger>
@@ -264,7 +311,7 @@ export function UserForm({ initialData, readOnly = false }: UserFormProps) {
                                 <FormItem>
                                     <FormLabel>Address</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Type an address..." {...field} disabled={readOnly} />
+                                        <Input placeholder="Type an address..." {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -281,7 +328,6 @@ export function UserForm({ initialData, readOnly = false }: UserFormProps) {
                                     <Select
                                         onValueChange={field.onChange}
                                         value={field.value}
-                                        disabled={readOnly}
                                     >
                                         <FormControl>
                                             <SelectTrigger>
@@ -308,7 +354,6 @@ export function UserForm({ initialData, readOnly = false }: UserFormProps) {
                                     <Select
                                         onValueChange={field.onChange}
                                         value={field.value}
-                                        disabled={readOnly}
                                     >
                                         <FormControl>
                                             <SelectTrigger>
@@ -340,21 +385,18 @@ export function UserForm({ initialData, readOnly = false }: UserFormProps) {
                                         placeholder="N/A..."
                                         className="min-h-[100px] resize-none"
                                         {...field}
-                                        disabled={readOnly}
                                     />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
-                    {!readOnly && (
-                        <div className="flex gap-4">
-                            <Button type="submit">Submit</Button>
-                            <Button type="button" variant="outline">
-                                Cancel
-                            </Button>
-                        </div>
-                    )}
+                    <div className="flex gap-4">
+                        <Button type="submit">Submit</Button>
+                        <Button type="button" variant="outline" onClick={handleCancel}>
+                            Cancel
+                        </Button>
+                    </div>
                 </form>
             </Form>
         </div>
