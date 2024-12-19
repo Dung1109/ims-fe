@@ -11,18 +11,27 @@ import {
   SidebarFooter,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import useAuthStore from "@/hooks/useAuthStore"
 
-const navigation = [
-  { name: "Homepage", href: "/", icon: Home },
-  { name: "Candidate", href: "/candidate", icon: User2 },
-  { name: "Job", href: "/job", icon: Briefcase },
-  { name: "Interview", href: "/interview", icon: MessageSquare },
-  { name: "Offer", href: "/offer", icon: FileText },
-  { name: "User", href: "/user", icon: Users },
-]
+
 
 export function AppSidebar() {
+  let navigation;
+
   const pathname = usePathname()
+  const { role } = useAuthStore();
+
+  const baseNavigation = [
+    { name: "Homepage", href: "/", icon: Home },
+    { name: "Candidate", href: "/candidate", icon: User2 },
+    { name: "Job", href: "/job", icon: Briefcase }, 
+    { name: "Interview", href: "/interview", icon: MessageSquare },
+    { name: "Offer", href: "/offer", icon: FileText },
+  ]
+
+  navigation = role === "ADMIN" 
+    ? [...baseNavigation, { name: "User", href: "/user", icon: Users }]
+    : baseNavigation
 
   return (
     <Sidebar collapsible="icon" className="h-full">

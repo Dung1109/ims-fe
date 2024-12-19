@@ -3,7 +3,7 @@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { CalendarIcon, ChevronRight, Loader2, Paperclip } from "lucide-react";
+import { CalendarIcon, ChevronRight, Loader2, Paperclip } from 'lucide-react';
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 
@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { type CandidateFormData } from "@/types/candidate";
 import * as z from "zod";
 import {
   Breadcrumb,
@@ -42,13 +41,16 @@ import {
   BreadcrumbLink,
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
+import { ToastAction } from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 
 const positions = [
   "Backend Developer",
-  "Frontend Developer",
-  "Full Stack Developer",
-  "DevOps Engineer",
-  "UI/UX Designer",
+  "Business Analyst", 
+  "Tester",
+  "HR",
+  "Project manager",
+  "Not available"
 ];
 
 const skills = [
@@ -67,62 +69,130 @@ const candidateSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
   email: z.string().email("Invalid email address"),
   gender: z.enum(["male", "female", "other"]),
-  dateOfBirth: z.date().max(new Date(), "Date of Birth must be in the past"),
-  address: z.string().min(1, "Address is required"),
+  dateOfBirth: z.preprocess((arg) => {
+    if (typeof arg == "string" || arg instanceof Date) return new Date(arg)
+    return arg
+  }, z.date().max(new Date(), "Date of Birth must be in the past")),  address: z.string().min(1, "Address is required"),
   phoneNumber: z.string().min(1, "Phone number is required"),
-  cvAttachment: z.string().min(1, "CV attachment is required"),
+  cvAttachment: z.instanceof(File).refine((file) => file.size <= 25000000, `Max file size is 25MB.`),
   currentPosition: z.string().min(1, "Current position is required"),
   skills: z.array(z.string()).min(1, "At least one skill is required"),
   yearsOfExperience: z.number().min(0).optional(),
-  highestLevel: z.enum(["junior", "mid", "senior", "lead"]),
+  highestLevel: z.enum(["high_school", "bachelors", "masters", "phd"]),
   recruiterOwner: z.string().min(1, "Recruiter owner is required"),
-  note: z.string().max(500, "Note must be 500 characters or less"),
-  status: z.enum(["active", "inactive", "pending"]).default("active"),
+  note: z.string().max(500, "Note must be 500 characters or less").optional(),
+  status: z.enum(["open", "banned"]).default("open"),
 });
+
+type CandidateFormData = z.infer<typeof candidateSchema>;
 
 export default function CandidateForm() {
   const router = useRouter();
+  const { toast } = useToast()
   const form = useForm<CandidateFormData>({
     resolver: zodResolver(candidateSchema),
     defaultValues: {
       skills: [],
-      status: "active",
-      highestLevel: "junior",
+      status: undefined,
+      highestLevel: undefined,
     },
   });
 
   const mutation = useMutation({
     mutationFn: async (data: CandidateFormData) => {
-      const response = await fetch("/api/candidates", {
-        method: "POST",
+      const formData = new FormData();
+      
+      // Append all fields according to the backend's @RequestParam expectations
+      formData.append('cvAttachment', data.cvAttachment);
+
+
+      // Append candidate as JSON to FormData
+      // formData.append('candidate', JSON.stringify(candidate));
+
+      const csrfToken = await fetch("http://127.0.0.1:8080/csrf", {
+        method: "GET",
+        credentials: "include",
         headers: {
-          "Content-Type": "application/json",
+            "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+      }).then((res) => res.json()).then((data) => data.token);
+
+      const response = await fetch("http://127.0.0.1:8080/candidate-resource-server/candidate/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+        headers: {
+          "X-XSRF-Token": csrfToken,
+        },
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create candidate");
+        throw new Error("Failed to upload file");
       }
 
-      return response.json();
+      const fileUrl = await response.text();
+
+            // Create candidate object with all fields except cvAttachment
+            const candidate = {
+              fullName: data.fullName,
+              email: data.email,
+              gender: data.gender,
+              dateOfBirth: format(new Date(data.dateOfBirth), 'yyyy-MM-dd'),
+              address: data.address,
+              phoneNumber: data.phoneNumber,
+              currentPosition: data.currentPosition,
+              skills: data.skills,
+              yearsOfExperience: data.yearsOfExperience,
+              highestLevel: data.highestLevel,
+              recruiterOwner: data.recruiterOwner,
+              note: data.note,
+              status: data.status,
+              cvAttachment: fileUrl
+            };
+
+      const addResponse = await fetch("http://127.0.0.1:8080/candidate-resource-server/candidate/add", {
+        method: "POST",
+        body: JSON.stringify(candidate),
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-XSRF-Token": csrfToken,
+        },
+      });
+
+      if (!addResponse.ok) {
+        throw new Error("Failed to create candidate");
+      }
+      return addResponse.json();
     },
     onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Candidate created successfully",
+        action: <ToastAction altText="Go to candidates">Go to candidates</ToastAction>,
+      });
       router.push("/candidates");
-      alert("Successfully created candidate");
     },
     onError: () => {
-      alert("Failed to create candidate");
+      toast({
+        title: "Error",
+        description: "Failed to create candidate",
+        variant: "destructive",
+      });
     },
   });
 
   const onSubmit = (data: CandidateFormData) => {
-    mutation.mutate(data);
+    if (data.cvAttachment) {
+      mutation.mutate(data);
+    } else {
+      console.error("CV attachment is missing");
+    }
   };
 
   const assignMe = () => {
     // In a real application, you would get the current user's information
-    form.setValue("recruiter", "Current User (CurrentUser123)");
+    form.setValue("recruiterOwner", "Current User (CurrentUser123)");
   };
 
   return (
@@ -282,12 +352,20 @@ export default function CandidateForm() {
             <FormField
               control={form.control}
               name="cvAttachment"
-              render={({ field }) => (
+              render={({ field: { value, onChange, ...field } }) => (
                 <FormItem>
                   <FormLabel>CV attachment *</FormLabel>
                   <FormControl>
                     <div className="flex items-center">
-                      <Input type="file" accept=".pdf,.doc,.docx" {...field} />
+                      <Input 
+                        type="file" 
+                        accept=".pdf,.doc,.docx" 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) onChange(file);
+                        }}
+                        {...field}
+                      />
                       <Paperclip className="ml-2" />
                     </div>
                   </FormControl>
@@ -298,7 +376,7 @@ export default function CandidateForm() {
 
             <FormField
               control={form.control}
-              name="position"
+              name="currentPosition"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Current position *</FormLabel>
@@ -373,7 +451,7 @@ export default function CandidateForm() {
 
             <FormField
               control={form.control}
-              name="recruiter"
+              name="recruiterOwner"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Recruiter owner *</FormLabel>
@@ -434,9 +512,8 @@ export default function CandidateForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="banned">Banned</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -479,10 +556,10 @@ export default function CandidateForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="junior">Junior</SelectItem>
-                      <SelectItem value="mid">Mid</SelectItem>
-                      <SelectItem value="senior">Senior</SelectItem>
-                      <SelectItem value="lead">Lead</SelectItem>
+                      <SelectItem value="high_school">High school</SelectItem>
+                      <SelectItem value="bachelors">Bachelor's Degree</SelectItem>
+                      <SelectItem value="masters">Master Degree</SelectItem>
+                      <SelectItem value="phd">PhD</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -511,3 +588,4 @@ export default function CandidateForm() {
     </Form>
   );
 }
+

@@ -14,6 +14,7 @@ import {
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CircleUserRound } from "lucide-react";
+import useAuthStore, { getAuthState } from "@/hooks/useAuthStore";
 
 interface Csrf {
   headerName: string;
@@ -27,6 +28,11 @@ export function SiteHeader() {
     headerName: "",
     token: "",
   });
+ 
+  const { username, department, role, setAuthenticated, } = useAuthStore();
+
+  console.log("username, department", username, department)
+
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
 
@@ -60,8 +66,20 @@ export function SiteHeader() {
       form.method = "POST";
       form.action = `http://127.0.0.1:8080/logout?_csrf=${csrf.token}`;
       document.body.appendChild(form);
+      
+      // Reset all auth state
+      setAuthenticated(false);
+      useAuthStore.setState({
+        username: '',
+        role: '',
+        department: '',
+        authenticated: false
+      });
+
       form.submit();
       document.body.removeChild(form);
+      
+      router.push('/login');
     } catch (error) {
       console.error("Error logging out:", error);
       router.push("/login");
@@ -73,9 +91,11 @@ export function SiteHeader() {
       <div className="flex items-center gap-4">
         <div className="text-sm text-right">
           <div>
-            hoaank 
+            {username} 
           </div>
-          <div className="text-muted-foreground">HR Department</div>
+          <div className="text-muted-foreground">
+            {department}
+          </div>
         </div>
         <CircleUserRound />
         <Dialog open={isOpen} onOpenChange={setIsOpen}>

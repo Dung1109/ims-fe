@@ -112,7 +112,7 @@ interface UserFormProps {
 export function UserForm({ initialData, isEditing = false }: UserFormProps) {
     const { toast } = useToast();
     const router = useRouter();
-
+    console.log("form", initialData);
     const form = useForm<UserFormValues>({
         resolver: zodResolver(userSchema),
         defaultValues: initialData || {

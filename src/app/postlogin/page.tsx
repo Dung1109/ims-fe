@@ -7,6 +7,8 @@ import useAuthStore from '../../hooks/useAuthStore';
 export default function PostLoginPage() {
   const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
   const setUsername = useAuthStore((state) => state.setUsername);
+  const setRole = useAuthStore((state) => state.setRole);
+  const setDepartment = useAuthStore((state) => state.setDepartment);
   const router = useRouter();
   console.log('PostLoginPage');
   
@@ -14,7 +16,7 @@ export default function PostLoginPage() {
   useEffect(() => {
     
     const loadUsername = async () => {
-        const response = await fetch('http://127.0.0.1:8080/user/username', {
+        const response = await fetch('http://127.0.0.1:8080/user/profile', {
             method: 'GET',
             credentials: "include",
             headers: {
@@ -33,11 +35,16 @@ export default function PostLoginPage() {
         
         const json = await response?.json();
         if(response?.ok) {
-            const _username = json.username
+            const _username = json.sub
             const _authenticated = _username !== null && _username.length > 0
+            const _role = json.role
+            const _department = json.department.toString().toUpperCase()
 
             setUsername(_username)
             setAuthenticated(_authenticated)
+            setRole(_role)
+            setDepartment(_department)
+            
 
             router.push('/')
         } else {
