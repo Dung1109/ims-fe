@@ -147,32 +147,108 @@ const initialCandidates: Candidate[] = [
 
 export default function CandidateList() {
     const [search, setSearch] = useState("");
-    const [status, setStatus] = useState("all"); // Updated initial status
-    const [candidates, setCandidates] =
-        useState<Candidate[]>(initialCandidates);
-    const [userRole, setUserRole] = useState<
-        "recruiter" | "manager" | "admin" | "interviewer"
-    >("recruiter");
+    const [csrfToken, setCsrfToken] = useState("");
+    const [status, setStatus] = useState("all");
+    const [candidates, setCandidates] = useState<Candidate[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [userRole, setUserRole] = useState<"recruiter" | "manager" | "admin" | "interviewer">("recruiter");
     const { toast } = useToast();
 
     useEffect(() => {
-        // Simulating fetching user role from an API
-        setUserRole("recruiter");
-    }, []);
+        fetchCandidates();
+    }, [search, status]);
+
+    const fetchCandidates = async () => {
+        try {
+            const queryParams = new URLSearchParams({
+                pageNo: "0",
+                pageSize: "100",
+                filterBy: search,
+                status: status === "all" ? "" : status
+            });
+
+            const response = await fetch(
+                `http://127.0.0.1:8080/candidate-resource-server/candidate?${queryParams}`,
+                {
+                    credentials: "include",
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch candidates");
+            }
+
+            const data = await response.json();
+            setCandidates(data.candidates.map((candidate: any) => ({
+                id: candidate.id.toString(),
+                fullName: candidate.fullName,
+                email: candidate.email,
+                phoneNumber: candidate.phoneNumber,
+                currentPosition: candidate.currentPosition,
+                recruiterOwner: candidate.recruiterOwner,
+                status: candidate.status,
+                createdAt: candidate.createdAt || new Date().toISOString(),
+            })));
+        } catch (error) {
+            console.error("Error fetching candidates:", error);
+            toast({
+                title: "Error",
+                description: "Failed to fetch candidates",
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        try {
+
+            const csrfToken = await fetch("http://127.0.0.1:8080/csrf", {
+                method: "GET",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }).then((res) => res.json()).then((data) => data.token);
+
+            const response = await fetch(
+                `http://127.0.0.1:8080/candidate-resource-server/candidate/${id}`,
+                {
+                    method: "DELETE",
+                    credentials: "include",
+                    headers: {
+                        "X-XSRF-Token": csrfToken,
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to delete candidate");
+            }
+
+            toast({
+                title: "Success",
+                description: "Candidate deleted successfully",
+            });
+
+            // Refresh the candidate list
+            fetchCandidates();
+        } catch (error) {
+            console.error("Error deleting candidate:", error);
+            toast({
+                title: "Error",
+                description: "Failed to delete candidate",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleSearch = () => {
+        fetchCandidates();
+    };
 
     const filteredCandidates = candidates
-        .filter((candidate) => {
-            const matchesSearch =
-                search === "" ||
-                Object.values(candidate).some(
-                    (value) =>
-                        typeof value === "string" &&
-                        value.toLowerCase().includes(search.toLowerCase())
-                );
-            const matchesStatus =
-                status === "all" || candidate.status === status; // Updated status matching
-            return matchesSearch && matchesStatus;
-        })
         .sort((a, b) => {
             const statusComparison =
                 statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
@@ -183,21 +259,9 @@ export default function CandidateList() {
             );
         });
 
-    const handleSearch = () => {
-        if (filteredCandidates.length === 0) {
-            toast({
-                title: "No Results",
-                description:
-                    "No item matches with your search data. Please try again",
-                variant: "destructive",
-            });
-        }
-    };
-
-    const handleDelete = (id: string) => {
-        // Implement delete functionality here
-        console.log(`Delete candidate with id: ${id}`);
-    };
+    if (loading) {
+        return <div className="p-6">Loading...</div>;
+    }
 
     return (
         <div className="p-6">
@@ -274,13 +338,13 @@ export default function CandidateList() {
                         <tbody>
                             {filteredCandidates.map((candidate) => (
                                 <tr key={candidate.id} className="border-t">
-                                    <td className="p-4">{candidate.name}</td>
+                                    <td className="p-4">{candidate.fullName}</td>
                                     <td className="p-4">{candidate.email}</td>
-                                    <td className="p-4">{candidate.phoneNo}</td>
+                                    <td className="p-4">{candidate.phoneNumber}</td>
                                     <td className="p-4">
                                         {candidate.currentPosition}
                                     </td>
-                                    <td className="p-4">{candidate.ownerHR}</td>
+                                    <td className="p-4">{candidate.recruiterOwner}</td>
                                     <td className="p-4">
                                         <span
                                             className={`inline-block px-2 py-1 rounded-full text-sm ${
@@ -309,7 +373,7 @@ export default function CandidateList() {
                                                 asChild
                                             >
                                                 <Link
-                                                    href={`/candidates/${candidate.id}`}
+                                                    href={`/candidate/${candidate.id}`}
                                                 >
                                                     <Eye className="h-4 w-4" />
                                                 </Link>
@@ -324,7 +388,7 @@ export default function CandidateList() {
                                                         asChild
                                                     >
                                                         <Link
-                                                            href={`/candidates/${candidate.id}/edit`}
+                                                            href={`/candidate/${candidate.id}/edit`}
                                                         >
                                                             <Pencil className="h-4 w-4" />
                                                         </Link>

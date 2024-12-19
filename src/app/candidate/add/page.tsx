@@ -171,7 +171,7 @@ export default function CandidateForm() {
         description: "Candidate created successfully",
         action: <ToastAction altText="Go to candidates">Go to candidates</ToastAction>,
       });
-      router.push("/candidates");
+      router.push("/candidate");
     },
     onError: () => {
       toast({
@@ -579,7 +579,7 @@ export default function CandidateForm() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.push("/candidates")}
+            onClick={() => router.push("/candidate")}
           >
             Cancel
           </Button>
