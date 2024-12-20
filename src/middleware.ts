@@ -9,6 +9,15 @@ const publicRoutes = [
     "/user",
     "/candidate/add",
     "/candidate",
+    "/interview/create",
+    "/interview",
+    "/recruiter/edit",
+    "/job",
+    "/job/create",
+    "/job/edit",
+    "/offer",
+    "/offer/create",
+    "/offer/edit",
 ];
 
 export function middleware(request: NextRequest) {
