@@ -145,8 +145,9 @@ export default function CreateJob() {
         e.preventDefault();
 
         try {
-            const response = await fetch("http://localhost:8080/api/jobs", {
+            const response = await fetch("http://localhost:8083/api/jobs", {
                 method: "POST",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
                 },

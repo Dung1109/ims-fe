@@ -1,6 +1,5 @@
 "use client";
 
-import "../css/style.css";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -52,8 +51,17 @@ export default function Page() {
         setLoading(true);
         setError(null);
         try {
+            console.log("fetching jobs");
+            
             const response = await fetch(
-                `http://localhost:8080/api/jobs?page=${page}`
+                // `http://127.0.0.1:8080/job-resource-server/api/jobs?page=${page}`,
+                `http://127.0.0.1:8083/api/jobs?page=${page}`,
+                {
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
             );
             if (!response.ok) {
                 throw new Error("Failed to fetch users");

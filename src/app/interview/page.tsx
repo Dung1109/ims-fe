@@ -53,7 +53,14 @@ export default function Page() {
         setError(null);
         try {
             const response = await fetch(
-                `http://localhost:8080/api/interviews?page=${page}`
+                `http://localhost:8083/api/interviews?page=${page}`,
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                }
+                
             );
             if (!response.ok) {
                 throw new Error("Failed to fetch jobs");
