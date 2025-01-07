@@ -301,7 +301,7 @@ export default function CandidateList() {
                     userRole === "admin") && (
                     <Button asChild className="ml-auto">
                         <Link href="/candidate/add">
-                            <Plus className="mr-2 h-4 w-4" /> Add new
+                            <Plus className="mr-2 h-4 w-4" /> Add new candidate
                         </Link>
                     </Button>
                 )}
