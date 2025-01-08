@@ -94,7 +94,6 @@ export default function CandidateEditPage({ params }: { params: Promise<{ id: st
             skills: [],
             status: undefined,
             highestLevel: undefined,
-            note: "",
         },
     });
 
@@ -495,7 +494,7 @@ export default function CandidateEditPage({ params }: { params: Promise<{ id: st
                                 <FormItem>
                                     <FormLabel>Note</FormLabel>
                                     <FormControl>
-                                        <Textarea placeholder="N/A" {...field} maxLength={500} value={field.value || ""} />
+                                        <Textarea placeholder="N/A" {...field} maxLength={500} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

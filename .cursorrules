@@ -1,0 +1,6 @@
+1. Use TypeScript for type safety
+2. Implement proper metadata for SEO
+3. Utilize Next.js Image component for optimized images
+4. Use CSS Modules or Tailwind CSS for styling
+5. Use React Query for data fetching and caching
+6. Use Shadcn UI for styling
