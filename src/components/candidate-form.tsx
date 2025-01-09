@@ -95,6 +95,7 @@ export function CandidateForm({
   const router = useRouter();
   const { toast } = useToast();
   const [recruiters, setRecruiters] = useState<any[]>([]);
+  const [showInput, setShowInput] = useState(false);
 
   const form = useForm<CandidateFormData>({
     resolver: zodResolver(candidateSchema),
@@ -396,11 +397,16 @@ export function CandidateForm({
                 <FormItem>
                   <FormLabel>CV attachment {!isEditing && "*"}</FormLabel>
                   <FormControl>
-                    {}
-                    {initialData?.cvAttachmentName ? (
+                    {initialData?.cvAttachmentName && !showInput ? (
                       <div className="flex items-center">
-                        <Paperclip className="ml-2" />
-                        <span>{initialData.cvAttachmentName}</span>
+                        <Button
+                          variant="ghost"
+                          className="p-0 h-auto font-normal"
+                          onClick={() => setShowInput(true)}
+                        >
+                          <Paperclip className="mr-2" />
+                          <span>{initialData.cvAttachmentName}</span>
+                        </Button>
                       </div>
                     ) : (
                       <div className="flex items-center">
@@ -409,9 +415,11 @@ export function CandidateForm({
                           accept=".pdf,.doc,.docx"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) onChange(file);
+                            if (file) {
+                              onChange(file);
+                              setShowInput(false);
+                            }
                           }}
-                          placeholder="file seads"
                           {...field}
                         />
                         <Paperclip className="ml-2" />
