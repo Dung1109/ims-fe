@@ -30,6 +30,8 @@
         "axios": "^1.7.9",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "cmdk": "1.0.0",
+        "command": "^0.0.5",
         "date-fns": "^4.1.0",
         "ims-fe": "file:",
         "js-cookie": "^3.0.5",
