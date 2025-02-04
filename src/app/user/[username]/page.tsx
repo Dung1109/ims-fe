@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { UserDetails } from "@/components/user-details";
-
+import useAuthStore from "@/hooks/useAuthStore"
 async function fetchUserByUsername(username: string) {
     const res = await fetch(`http://127.0.0.1:8080/resource-server/users/${username}`, {
         method: "GET",

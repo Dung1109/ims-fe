@@ -16,7 +16,7 @@ import { useToast } from "../../hooks/use-toast";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Candidate {
-    id: string;
+    id: number;
     name: string;
     email: string;
     phoneNo: string;
@@ -24,128 +24,138 @@ interface Candidate {
     ownerHR: string;
     status: string;
     createdAt: string;
+    totalCandidates: number;
 }
 
 const statusOrder = [
-    "Waiting for interview",
-    "Waiting for approval",
-    "Waiting for response",
-    "Open",
-    "Passed Interview",
-    "Approved Offer",
-    "Rejected Offer",
-    "Accepted offer",
-    "Declined offer",
-    "Cancelled offer",
-    "Failed interview",
-    "Cancelled interview",
-    "Banned",
+    // "Waiting for interview",
+    // "Waiting for approval",
+    // "Waiting for response",
+    // "Open",
+    // "Passed Interview",
+    // "Approved Offer",
+    // "Rejected Offer",
+    // "Accepted offer",
+    // "Declined offer",
+    // "Cancelled offer",
+    // "Failed interview",
+    // "Cancelled interview",
+    // "Banned",
+    "Name",
+    "Email",
+    "Phone",
+    "Current Possition",
+    "Owner HR",
+    "Status",
 ];
 
-const initialCandidates: Candidate[] = [
-    {
-        id: "1",
-        name: "Nguyễn Khắc Hoàn",
-        email: "hoannk@gmail.com",
-        phoneNo: "012345678",
-        currentPosition: "Developer",
-        ownerHR: "anhhm1",
-        status: "Waiting for interview",
-        createdAt: "2023-06-01T10:00:00Z",
-    },
-    {
-        id: "2",
-        name: "Nguyễn Minh Lương",
-        email: "luongmn@gmail.com",
-        phoneNo: "012345678",
-        currentPosition: "Developer",
-        ownerHR: "anhhm8",
-        status: "Open",
-        createdAt: "2023-06-02T11:00:00Z",
-    },
-    {
-        id: "3",
-        name: "Nguyễn Văn Đại",
-        email: "dainv@gmail.com",
-        phoneNo: "012345678",
-        currentPosition: "Developer",
-        ownerHR: "anhhm2",
-        status: "Open",
-        createdAt: "2023-06-03T12:00:00Z",
-    },
-    {
-        id: "4",
-        name: "Nguyễn Minh Hoàn",
-        email: "hoanmn@gmail.com",
-        phoneNo: "012345678",
-        currentPosition: "Developer",
-        ownerHR: "anhhm2",
-        status: "Waiting for interview",
-        createdAt: "2023-06-04T13:00:00Z",
-    },
-    {
-        id: "5",
-        name: "Nguyễn Khắc Đại",
-        email: "daink@gmail.com",
-        phoneNo: "012345678",
-        currentPosition: "Developer",
-        ownerHR: "anhhm4",
-        status: "Passed Interview",
-        createdAt: "2023-06-05T14:00:00Z",
-    },
-    {
-        id: "6",
-        name: "Nguyễn Văn Lương",
-        email: "luongnv@gmail.com",
-        phoneNo: "012345678",
-        currentPosition: "Developer",
-        ownerHR: "anhhm4",
-        status: "Interviewed",
-        createdAt: "2023-06-06T15:00:00Z",
-    },
-    {
-        id: "7",
-        name: "Quách Trang",
-        email: "trangq@gmail.com",
-        phoneNo: "012345678",
-        currentPosition: "BA",
-        ownerHR: "anhhm5",
-        status: "Offered",
-        createdAt: "2023-06-07T16:00:00Z",
-    },
-    {
-        id: "8",
-        name: "Lê Trang",
-        email: "tranl@gmail.com",
-        phoneNo: "012345678",
-        currentPosition: "BA",
-        ownerHR: "anhhm5",
-        status: "Failed interview",
-        createdAt: "2023-06-08T17:00:00Z",
-    },
-    {
-        id: "9",
-        name: "Huyền Trang",
-        email: "trangh@gmail.com",
-        phoneNo: "012345678",
-        currentPosition: "BA",
-        ownerHR: "anhhm5",
-        status: "Declined offer",
-        createdAt: "2023-06-09T18:00:00Z",
-    },
-    {
-        id: "10",
-        name: "Nguyễn Quang",
-        email: "quangn@gmail.com",
-        phoneNo: "012345678",
-        currentPosition: "BA",
-        ownerHR: "anhhm5",
-        status: "Banned",
-        createdAt: "2023-06-10T19:00:00Z",
-    },
-];
+// const initialCandidates: Candidate[] = [
+//     {
+//         id: 1,
+//         name: "Nguyễn Khắc Hoàn",
+//         email: "hoannk@gmail.com",
+//         phoneNo: "012345678",
+//         currentPosition: "Developer",
+//         ownerHR: "anhhm1",
+//         status: "Waiting for interview",
+//         createdAt: "2023-06-01T10:00:00Z",
+//     },
+//     {
+//         id: 2,
+//         name: "Nguyễn Minh Lương",
+//         email: "luongmn@gmail.com",
+//         phoneNo: "012345678",
+//         currentPosition: "Developer",
+//         ownerHR: "anhhm8",
+//         status: "Open",
+//         createdAt: "2023-06-02T11:00:00Z",
+//     },
+//     {
+//         id: 3,
+//         name: "Nguyễn Văn Đại",
+//         email: "dainv@gmail.com",
+//         phoneNo: "012345678",
+//         currentPosition: "Developer",
+//         ownerHR: "anhhm2",
+//         status: "Open",
+//         createdAt: "2023-06-03T12:00:00Z",
+//     },
+//     {
+//         id: 4,
+//         name: "Nguyễn Minh Hoàn",
+//         email: "hoanmn@gmail.com",
+//         phoneNo: "012345678",
+//         currentPosition: "Developer",
+//         ownerHR: "anhhm2",
+//         status: "Waiting for interview",
+//         createdAt: "2023-06-04T13:00:00Z",
+//     },
+//     {
+//         id: 5,
+//         name: "Nguyễn Khắc Đại",
+//         email: "daink@gmail.com",
+//         phoneNo: "012345678",
+//         currentPosition: "Developer",
+//         ownerHR: "anhhm4",
+//         status: "Passed Interview",
+//         createdAt: "2023-06-05T14:00:00Z",
+//     },
+//     {
+//         id: 6,
+//         name: "Nguyễn Văn Lương",
+//         email: "luongnv@gmail.com",
+//         phoneNo: "012345678",
+//         currentPosition: "Developer",
+//         ownerHR: "anhhm4",
+//         status: "Interviewed",
+//         createdAt: "2023-06-06T15:00:00Z",
+//     },
+//     {
+//         id: 7,
+//         name: "Quách Trang",
+//         email: "trangq@gmail.com",
+//         phoneNo: "012345678",
+//         currentPosition: "BA",
+//         ownerHR: "anhhm5",
+//         status: "Offered",
+//         createdAt: "2023-06-07T16:00:00Z",
+//     },
+//     {
+//         id: 8,
+//         name: "Lê Trang",
+//         email: "tranl@gmail.com",
+//         phoneNo: "012345678",
+//         currentPosition: "BA",
+//         ownerHR: "anhhm5",
+//         status: "Failed interview",
+//         createdAt: "2023-06-08T17:00:00Z",
+//     },
+//     {
+//         id: 9,
+//         name: "Huyền Trang",
+//         email: "trangh@gmail.com",
+//         phoneNo: "012345678",
+//         currentPosition: "BA",
+//         ownerHR: "anhhm5",
+//         status: "Declined offer",
+//         createdAt: "2023-06-09T18:00:00Z",
+//     },
+//     {
+//         id: 10,
+//         name: "Nguyễn Quang",
+//         email: "quangn@gmail.com",
+//         phoneNo: "012345678",
+//         currentPosition: "BA",
+//         ownerHR: "anhhm5",
+//         status: "Banned",
+//         createdAt: "2023-06-10T19:00:00Z",
+//     },
+//];
 
 export default function CandidateList() {
+
+    const [pageNo,setPageNo] = useState(0);
+    const [totalPages,setTotalPages] = useState(1);
     const [search, setSearch] = useState("");
     const [csrfToken, setCsrfToken] = useState("");
     const [status, setStatus] = useState("all");
@@ -154,39 +164,72 @@ export default function CandidateList() {
     const [userRole, setUserRole] = useState<"recruiter" | "manager" | "admin" | "interviewer">("recruiter");
     const { toast } = useToast();
 
-    useEffect(() => {
-        fetchCandidates();
-    }, [search, status]);
+    const NextPage = ()=>{
+        let page = pageNo;
+        page = page + 1;
+        setPageNo(page);
 
-    const fetchCandidates = async () => {
+        fetchCandidates(page);
+
+    }
+    const PreviousPage =()=>{
+        let page = pageNo;
+        page = page - 1;
+        if(page<0)
+            page = 0;
+        setPageNo(page);
+        fetchCandidates(page);
+
+    }
+
+    useEffect(() => {
+        fetchCandidates(0);
+
+    }, []);
+
+    const fetchCandidates = async (pageNo) => {
         try {
             const queryParams = new URLSearchParams({
-                pageNo: "0",
+                pageNo: pageNo,
                 pageSize: "100",
                 filterBy: search,
                 status: status === "all" ? "" : status
+
             });
 
-            const response = await fetch(
-                `http://127.0.0.1:8080/candidate-resource-server/candidate?${queryParams}`,
-                {
-                    credentials: "include",
-                }
-            );
+
+
+                const response = await fetch(
+                    `http://localhost:8089/candidate-resource-server/candidate?${queryParams}`,
+
+                    {
+                        credentials: "include",
+                    }
+                );
 
             if (!response.ok) {
                 throw new Error("Failed to fetch candidates");
             }
 
             const data = await response.json();
+
+
+
+            if(data.candidates[0]?.totalCandidates){
+                setTotalPages(data.candidates[0].totalCandidates);
+            }else {
+                setTotalPages(1);
+            }
+            console.log(data.candidates[0]?.totalCandidates);
             setCandidates(data.candidates.map((candidate: any) => ({
-                id: candidate.id.toString(),
+                id: candidate.id,
                 fullName: candidate.fullName,
                 email: candidate.email,
                 phoneNumber: candidate.phoneNumber,
                 currentPosition: candidate.currentPosition,
                 recruiterOwner: candidate.recruiterOwner,
                 status: candidate.status,
+                totalCandidates: candidate.totalCandidates,
                 createdAt: candidate.createdAt || new Date().toISOString(),
             })));
         } catch (error) {
@@ -213,7 +256,7 @@ export default function CandidateList() {
             }).then((res) => res.json()).then((data) => data.token);
 
             const response = await fetch(
-                `http://127.0.0.1:8080/candidate-resource-server/candidate/${id}`,
+                `http://localhost:8089/candidate-resource-server/candidate/${id}`,
                 {
                     method: "DELETE",
                     credentials: "include",
@@ -233,7 +276,8 @@ export default function CandidateList() {
             });
 
             // Refresh the candidate list
-            fetchCandidates();
+
+            fetchCandidates(pageNo);
         } catch (error) {
             console.error("Error deleting candidate:", error);
             toast({
@@ -245,7 +289,8 @@ export default function CandidateList() {
     };
 
     const handleSearch = () => {
-        fetchCandidates();
+        setPageNo(0);
+        fetchCandidates(0);
     };
 
     const filteredCandidates = candidates
@@ -415,14 +460,14 @@ export default function CandidateList() {
                 </div>
                 <div className="flex items-center justify-between p-4 border-t">
                     <span className="text-sm text-muted-foreground">
-                        Showing {filteredCandidates.length} of{" "}
-                        {candidates.length} candidates
+                        Showing {((pageNo+1) * 1)} of{" "}
+                        {totalPages} candidates
                     </span>
                     <div className="flex gap-2">
-                        <Button variant="outline" size="sm" disabled>
+                        <Button variant="outline" size="sm"  disabled={pageNo==0} onClick={PreviousPage}>
                             Previous
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={NextPage} disabled={(pageNo+1)==totalPages}>
                             Next
                         </Button>
                     </div>

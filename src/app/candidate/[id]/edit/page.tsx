@@ -1,10 +1,11 @@
 "use client";
-
-import React from "react";
+import "@/static/controll_pressed.js";
+import "@/static/style_input.css"
+import React, {useState} from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CalendarIcon, ChevronRight, Loader2, Paperclip } from 'lucide-react';
+import {CalendarIcon, ChevronRight, Loader2, Locate, Paperclip} from 'lucide-react';
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -87,6 +88,10 @@ type CandidateFormData = z.infer<typeof candidateSchema>;
 export default function CandidateEditPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = React.use(params);
     const router = useRouter();
+    const [cand, setCand] = useState<CandidateFormData>();
+    const [dataFile, setDataFile] = useState<File>();
+    const [nameFile, setnameFile] = useState();
+    const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
     const form = useForm<CandidateFormData>({
         resolver: zodResolver(candidateSchema),
@@ -98,33 +103,80 @@ export default function CandidateEditPage({ params }: { params: Promise<{ id: st
     });
 
     // Fetch candidate data
-    const { data: candidate, isLoading } = useQuery({
-        queryKey: ['candidate', id],
-        queryFn: async () => {
+    // const { data: candidate, isLoading } = useQuery({
+    //     queryKey: ['candidate', id],
+    //     queryFn: async () => {
+    //         const response = await fetch(
+    //             `http://localhost:8089/candidate-resource-server/candidate/${id}`,
+    //             { credentials: "include" }
+    //         );
+    //
+    //         if (!response.ok) throw new Error('Failed to fetch candidate');
+    //         const data2 = await response.json();
+    //         return data2;
+    //     },
+    // });
+    const fetchEditCandidates = async () => {
+        try {
+
+           // setCand(null);
             const response = await fetch(
-                `http://127.0.0.1:8080/candidate-resource-server/candidate/${id}`,
-                { credentials: "include" }
+                `http://localhost:8089/candidate-resource-server/candidate/edit/${id}`,
+
+                {
+                    credentials: "include",
+                }
             );
-            if (!response.ok) throw new Error('Failed to fetch candidate');
-            return response.json();
-        },
-    });
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch candidates");
+            }
+
+            const data = await response.json();
+            console.log("data 123 : ", data+"-"+(data +"-"+ (!form.formState.isDirty)));
+
+            setCand(data);
+            if (data && !form.formState.isDirty) {
+                console.log("date : "+data.dateOfBirth)
+
+                // @ts-ignore
+                const formData = {
+                    ...data,
+                    id: id,
+                    dateOfBirth: data.dateOfBirth,
+                    // yearsOfExperience: 2 || 0,
+                    // Ensure cvAttachment is not included in the reset
+                    //const fileUrl = {"fileName":"LeVanSang_JavaWeb_241225_115422.pdf","downloadUri":"/downloadFile/91K19UzM","size":668506}
+                    cvAttachment: new File([data.cvFile],"LeVanSang_JavaWeb_241225_115422.pdf")
+                };
+                form.reset(formData, {
+                    keepDefaultValues: true,
+                });
+                setnameFile(data.cvAttachment);
+                setIsLoading(false);
+
+            }
+
+
+
+        } catch (error) {
+            console.error("Error fetching candidates:", error);
+            toast({
+                title: "Error",
+                description: "Failed to fetch candidates",
+                variant: "destructive",
+            });
+        } finally {
+
+        }
+    };
 
     // Update form when candidate data is loaded
     useEffect(() => {
-        if (candidate && !form.formState.isDirty) {
-            const formData = {
-                ...candidate,
-                dateOfBirth: new Date(candidate.dateOfBirth),
-                yearsOfExperience: candidate.yearsOfExperience || 0,
-                // Ensure cvAttachment is not included in the reset
-                cvAttachment: undefined
-            };
-            form.reset(formData, {
-                keepDefaultValues: true,
-            });
-        }
-    }, [candidate]);
+
+        fetchEditCandidates();
+
+    }, []);
 
     const mutation = useMutation({
         mutationFn: async (data: CandidateFormData) => {
@@ -132,7 +184,7 @@ export default function CandidateEditPage({ params }: { params: Promise<{ id: st
             
             if (data.cvAttachment) {
                 formData.append('cvAttachment', data.cvAttachment);
-                
+                formData.append('cvIDAttachment', id);
                 const csrfToken = await fetch("http://127.0.0.1:8080/csrf", {
                     method: "GET",
                     credentials: "include",
@@ -140,9 +192,9 @@ export default function CandidateEditPage({ params }: { params: Promise<{ id: st
                         "Content-Type": "application/json",
                     },
                 }).then((res) => res.json()).then((data) => data.token);
-
-                const response = await fetch("http://127.0.0.1:8080/candidate-resource-server/candidate/upload", {
-                    method: "POST",
+                console.log("form : "+formData);
+                const response = await fetch("http://localhost:8089/candidate-resource-server/candidate/upload", {
+                    method: "PUT",
                     body: formData,
                     credentials: "include",
                     headers: {
@@ -167,7 +219,7 @@ export default function CandidateEditPage({ params }: { params: Promise<{ id: st
             }).then((res) => res.json()).then((data) => data.token);
 
             const updateResponse = await fetch(
-                `http://127.0.0.1:8080/candidate-resource-server/candidate/${id}`,
+                `http://localhost:8089/candidate-resource-server/candidate/${id}`,
                 {
                     method: "PUT",
                     body: JSON.stringify(data),
@@ -367,19 +419,21 @@ export default function CandidateEditPage({ params }: { params: Promise<{ id: st
                                     <FormLabel>CV attachment</FormLabel>
                                     <FormControl>
                                         <div className="flex items-center">
-                                            <Input
+                                            <input
                                                 type="file"
-                                                accept=".pdf,.doc,.docx"
+                                                title="Choose a video please"
+                                                id="aa"
                                                 onChange={(e) => {
                                                     const file = e.target.files?.[0];
-                                                    if (file) onChange(file);
-                                                }}
-                                                {...field}
-                                            />
-                                            <Paperclip className="ml-2" />
+                                                    if (file) {
+                                                        onChange(file);
+                                                        setnameFile(file.name);
+                                                    }
+                                                }}/><label id="fileLabel">{nameFile}</label>
+                                            <Paperclip/>
                                         </div>
                                     </FormControl>
-                                    <FormMessage />
+                                    <FormMessage/>
                                 </FormItem>
                             )}
                         />
@@ -387,7 +441,7 @@ export default function CandidateEditPage({ params }: { params: Promise<{ id: st
                         <FormField
                             control={form.control}
                             name="currentPosition"
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <FormItem>
                                     <FormLabel>Current position *</FormLabel>
                                     <Select
@@ -396,7 +450,7 @@ export default function CandidateEditPage({ params }: { params: Promise<{ id: st
                                     >
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select a position..." />
+                                                <SelectValue placeholder="Select a position..."/>
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
@@ -465,23 +519,23 @@ export default function CandidateEditPage({ params }: { params: Promise<{ id: st
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Recruiter owner *</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
+                                    <Input
+                                        id="demoInput"
+                                        type="text"
+                                        list="recruiter"
                                         defaultValue={field.value}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select recruiter..." />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {recruiters.map((recruiter) => (
-                                                <SelectItem key={recruiter} value={recruiter}>
-                                                    {recruiter}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        onChange={(x)=>{
+                                            field.onChange(x);
+                                        }}>
+
+                                    </Input>
+                                    <datalist id="recruiter">
+                                        {recruiters.map((x)=>(
+                                            <option key={x} value={x}>
+                                                {x}
+                                            </option>
+                                        ))}
+                                    </datalist>
                                     <FormMessage />
                                 </FormItem>
                             )}

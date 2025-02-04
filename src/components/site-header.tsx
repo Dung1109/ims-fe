@@ -22,7 +22,8 @@ interface Csrf {
   token: string;
 }
 
-export function SiteHeader() {
+export function
+SiteHeader() {
   const [csrf, setCsrf] = useState<Csrf>({
     parameterName: "",
     headerName: "",

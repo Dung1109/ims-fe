@@ -34,7 +34,7 @@ export default function CandidatePage({ params }: { params: { id: string } }) {
   useEffect(() => {
     const fetchCandidate = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:8080/candidate-resource-server/candidate/${params.id}`, {
+        const response = await fetch(`http://localhost:8089/candidate-resource-server/candidate/${params.id}`, {
           credentials: "include",
         });
         
@@ -63,13 +63,15 @@ export default function CandidatePage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div>
-      <div className="flex items-center gap-2 text-sm text-muted-foreground pt-6 px-6">
-        <Link href="/candidate" className="hover:text-foreground">
-          Candidate List
-        </Link>
-        <ChevronRight className="h-4 w-4" />
-        <span>View Candidate</span>
+
+  <div>
+
+    <div className="flex items-center gap-2 text-sm text-muted-foreground pt-6 px-6">
+      <Link href="/candidate" className="hover:text-foreground">
+        Candidate List
+      </Link>
+      <ChevronRight className="h-4 w-4"/>
+      <span>View Candidate</span>
       </div>
 
       <div className="bg-white rounded-lg p-6 space-y-6">
@@ -111,7 +113,7 @@ export default function CandidatePage({ params }: { params: { id: string } }) {
         <h2 className="text-xl font-semibold">II. Professional Information</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="font-medium">CV attachment</label>
+            <label className="font-medium">CV attachment : {candidate.cvAttachment}</label>
             <p className="mt-1">
               <a 
                 href={candidate.cvAttachment} 
